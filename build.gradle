@@ -26,6 +26,7 @@ dependencies {
   testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
   testImplementation 'org.hamcrest:hamcrest:2.2'
+  testImplementation 'org.testcontainers:junit-jupiter:1.16.0'
 
   annotationProcessor 'org.projectlombok:lombok:1.18.20'
 }
@@ -34,7 +35,14 @@ application {
   mainClass = 'com.github.lette1394.App'
 }
 
+bootBuildImage {
+  docker {
+    host = "tcp://192.168.99.100:2376"
+    tlsVerify = true
+    certPath = "/Users/na-imacpro/.docker/machine/machines/default"
+  }
+}
+
 test {
   useJUnitPlatform()
-
 }
