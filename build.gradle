@@ -1,3 +1,5 @@
+import org.springframework.boot.buildpack.platform.build.PullPolicy
+
 plugins {
   id 'application'
   id 'groovy'
@@ -26,18 +28,24 @@ dependencies {
   testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
   testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
   testImplementation 'org.hamcrest:hamcrest:2.2'
-  testImplementation 'org.testcontainers:junit-jupiter:1.16.0'
+  testImplementation "org.testcontainers:spock:1.16.0"
+  testImplementation 'org.testcontainers:postgresql:1.16.0'
+  testImplementation gradleTestKit()
 
   annotationProcessor 'org.projectlombok:lombok:1.18.20'
 }
 
-application {
-  mainClass = 'com.github.lette1394.App'
+bootRun {
+  mainClass = 'com.github.lette1394.runner.Spring'
 }
 
 bootBuildImage {
+  imageName = project.properties["dockerImageName"]
+  environment = [:]
+  verboseLogging = true
+
   docker {
-    host = "tcp://192.168.99.100:2376"
+    host = "tcp://192.168.99.101:2376"
     tlsVerify = true
     certPath = "/Users/na-imacpro/.docker/machine/machines/default"
   }
