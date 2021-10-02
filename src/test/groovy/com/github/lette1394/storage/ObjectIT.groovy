@@ -7,12 +7,13 @@ import java.util.concurrent.CompletionStage
 
 class ObjectIT extends BaseSpringIT {
   def '사용자는 파일을 저장하고 사용할 수 있다'() {
+    def file = file()
     def user = user(anySpace())
-    def object = user.create(file())
+    def object = user.create(file)
     def contents = object.contents()
 
     expect:
-      contents == file()
+      contents == file
   }
 
   static Space anySpace() {
