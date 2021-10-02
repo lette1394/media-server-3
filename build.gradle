@@ -22,6 +22,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
   implementation 'com.google.guava:guava:30.1.1-jre'
+  implementation 'org.apache.commons:commons-lang3:3.12.0'
 
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
   testImplementation 'org.codehaus.groovy:groovy:3.0.8'
@@ -45,7 +46,9 @@ bootBuildImage {
   verboseLogging = true
 
   docker {
-    host = "tcp://192.168.99.101:2376"
+    println System.getenv("DOCKER_HOST")
+    println "tcp://192.168.99.103:2376"
+    host = "tcp://192.168.99.103:2376"
     tlsVerify = true
     certPath = "/Users/na-imacpro/.docker/machine/machines/default"
   }

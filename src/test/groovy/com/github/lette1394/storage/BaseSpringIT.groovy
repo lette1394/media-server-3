@@ -1,7 +1,7 @@
 package com.github.lette1394.storage
 
+import com.github.lette1394.Space
 import com.github.lette1394.User
-import com.github.lette1394.storage.domain.Space
 import org.gradle.testkit.runner.GradleRunner
 import org.springframework.web.reactive.function.client.WebClient
 import org.testcontainers.containers.Container
@@ -21,17 +21,6 @@ import static org.testcontainers.containers.wait.strategy.Wait.forListeningPort
 
 @Testcontainers
 abstract class BaseSpringIT extends Specification {
-  @Shared
-  private Container db = new PostgreSQLContainer<>()
-    .waitingFor(forListeningPort())
-    .withNetwork(Network.SHARED)
-    .withLogConsumer(console())
-    .withNetworkAliases("db")
-    .with {
-      start()
-      it
-    }
-
   @Shared
   private Container server = new GenericContainer<>(bootBuildImage())
     .waitingFor(forListeningPort())

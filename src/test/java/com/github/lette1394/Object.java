@@ -7,13 +7,11 @@ import static org.hamcrest.Matchers.is;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.BodyExtractors.toDataBuffers;
 
-import com.github.lette1394.storage.domain.Space;
 import java.util.concurrent.CompletionStage;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 public class Object {
   private final Space space;
@@ -29,7 +27,7 @@ public class Object {
   public byte[] contents() {
     return webClient
       .get()
-      .uri("/spaces/{space}/objects/{objectId}", space, id)
+      .uri("/spaces/{space}/objects/{objectId}", space.name(), id)
       .retrieve()
       .toEntityFlux(toDataBuffers())
       .toFuture()
