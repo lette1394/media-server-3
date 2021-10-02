@@ -1,7 +1,10 @@
 package com.github.lette1394.storage
 
+import com.github.lette1394.User
+import com.github.lette1394.storage.domain.Space
 import org.gradle.testkit.runner.GradleRunner
 import org.springframework.web.reactive.function.client.WebClient
+import org.testcontainers.containers.Container
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.PostgreSQLContainer
@@ -19,7 +22,7 @@ import static org.testcontainers.containers.wait.strategy.Wait.forListeningPort
 @Testcontainers
 abstract class BaseSpringIT extends Specification {
   @Shared
-  private def db = new PostgreSQLContainer<>()
+  private Container db = new PostgreSQLContainer<>()
     .waitingFor(forListeningPort())
     .withNetwork(Network.SHARED)
     .withLogConsumer(console())
@@ -30,7 +33,7 @@ abstract class BaseSpringIT extends Specification {
     }
 
   @Shared
-  private def server = new GenericContainer<>(bootBuildImage())
+  private Container server = new GenericContainer<>(bootBuildImage())
     .waitingFor(forListeningPort())
     .withExposedPorts(8080)
     .withLogConsumer(console())
@@ -40,14 +43,20 @@ abstract class BaseSpringIT extends Specification {
     }
 
   @Shared
-  protected def webClient
+  private String endpoint
 
   void setup() {
-    var endpoint = "http://%s:%d/".formatted(
+    this.endpoint = "http://%s:%d/".formatted(
       server.containerIpAddress,
       server.firstMappedPort)
+  }
 
-    webClient = WebClient
+  protected User user(Space space) {
+    return new User(space, webClient())
+  }
+
+  private WebClient webClient() {
+    return WebClient
       .builder()
       .baseUrl(endpoint)
       .build()
