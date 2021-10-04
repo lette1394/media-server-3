@@ -1,11 +1,10 @@
-import org.springframework.boot.buildpack.platform.build.PullPolicy
-
 plugins {
   id 'application'
   id 'groovy'
   id 'java'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'org.springframework.boot' version '2.5.5'
+  id 'io.freefair.lombok' version '6.2.0'
 }
 
 java {
@@ -32,8 +31,6 @@ dependencies {
   testImplementation "org.testcontainers:spock:1.16.0"
   testImplementation 'org.testcontainers:postgresql:1.16.0'
   testImplementation gradleTestKit()
-
-  implementation 'org.projectlombok:lombok:1.18.20'
 }
 
 bootRun {
@@ -46,8 +43,6 @@ bootBuildImage {
   verboseLogging = true
 
   docker {
-    println System.getenv("DOCKER_HOST")
-    println "tcp://192.168.99.103:2376"
     host = "tcp://192.168.99.103:2376"
     tlsVerify = true
     certPath = "/Users/na-imacpro/.docker/machine/machines/default"
@@ -56,4 +51,11 @@ bootBuildImage {
 
 test {
   useJUnitPlatform()
+}
+
+task unitTest(type: Test) {
+  useJUnitPlatform()
+  filter {
+    excludeTestsMatching "*IT"
+  }
 }
