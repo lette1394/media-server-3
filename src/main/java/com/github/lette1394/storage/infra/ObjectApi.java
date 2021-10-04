@@ -3,6 +3,7 @@ package com.github.lette1394.storage.infra;
 import static com.github.lette1394.core.domain.FluentCompletionStage.peekStage;
 import static com.github.lette1394.core.domain.FluentCompletionStage.start;
 import static com.github.lette1394.storage.infra.MemoryObject.object;
+import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.ResponseEntity.notFound;
 
 import com.github.lette1394.storage.domain.AllSpaces;
@@ -33,6 +34,8 @@ public class ObjectApi {
     ServerHttpRequest request,
     @PathVariable String spaceName) {
 
+
+
     final var response = start()
       .thenCompose(__ -> allSpaces.belongingTo(spaceName))
       .thenCompose(space -> {
@@ -45,7 +48,7 @@ public class ObjectApi {
       })
       .thenApply(Object::id)
       .thenApply(id -> ResponseEntity
-        .status(HttpStatus.CREATED)
+        .status(CREATED)
         .header("x-media-server-object-id", id)
         .build())
       .exceptionally(__ -> notFound().build());
@@ -63,7 +66,7 @@ public class ObjectApi {
     final var response = start()
       .thenCompose(__ -> allSpaces.belongingTo(spaceName))
       .thenCompose(space -> space.objectBelongingTo(objectId))
-      .thenApply(Object::contents)
+      .thenCompose(Object::contents)
       .thenApply(contents -> ResponseEntity
         .status(HttpStatus.OK)
         .contentType(MediaType.IMAGE_JPEG)

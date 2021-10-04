@@ -1,9 +1,11 @@
 package com.github.lette1394.storage.infra;
 
+import static com.github.lette1394.core.domain.FluentCompletionStage.start;
 import static java.util.Objects.requireNonNull;
 
 import com.github.lette1394.storage.domain.Object;
 import java.io.ByteArrayInputStream;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -17,6 +19,12 @@ public class MemoryObject implements Object {
   public MemoryObject(String id, byte[] contents) {
     this.id = id;
     this.contents = contents;
+  }
+
+  public static CompletionStage<? extends Object> from(Object object) {
+    return start()
+      .thenCompose(__ -> object.contents())
+      .thenCompose(contents -> object(object.id(), contents));
   }
 
   public static CompletionStage<? extends Object> object(String id, Publisher<DataBuffer> contents) {
@@ -38,7 +46,8 @@ public class MemoryObject implements Object {
   }
 
   @Override
-  public Publisher<DataBuffer> contents() {
-    return DataBufferUtils.readInputStream(() -> new ByteArrayInputStream(contents), new DefaultDataBufferFactory(), 1024);
+  public CompletionStage<Publisher<DataBuffer>> contents() {
+    return CompletableFuture.completedFuture(
+      DataBufferUtils.readInputStream(() -> new ByteArrayInputStream(contents), new DefaultDataBufferFactory(), 1024));
   }
 }
