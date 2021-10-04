@@ -21,4 +21,8 @@ public final class FluentCompletionStage {
     Function<T, CompletionStage<? extends Void>> voidStageFunction) {
     return t -> voidStageFunction.apply(t).thenApply(__ -> t);
   }
+
+  public static <T> T await(CompletionStage<T> stage) {
+    return stage.toCompletableFuture().join();
+  }
 }
