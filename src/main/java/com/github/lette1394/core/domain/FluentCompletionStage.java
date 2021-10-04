@@ -16,4 +16,9 @@ public final class FluentCompletionStage {
       return t;
     };
   }
+
+  public static <T> Function<T, CompletionStage<T>> peekStage(
+    Function<T, CompletionStage<? extends Void>> voidStageFunction) {
+    return t -> voidStageFunction.apply(t).thenApply(__ -> t);
+  }
 }

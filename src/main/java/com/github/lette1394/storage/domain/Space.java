@@ -15,6 +15,10 @@ public class Space {
     this.allObjects = allObjects;
   }
 
+  public AllObjects allObjects() {
+    return allObjects;
+  }
+
   public CompletionStage<? extends Object> createObject(Publisher<DataBuffer> stream) {
     return MemoryObject.object(RandomStringUtils.randomAlphanumeric(10, 20), stream);
   }

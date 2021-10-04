@@ -1,10 +1,13 @@
 package com.github.lette1394.storage.infra;
 
+import static com.github.lette1394.core.domain.FluentCompletionStage.peekStage;
 import static com.github.lette1394.core.domain.FluentCompletionStage.start;
+import static com.github.lette1394.storage.infra.MemoryObject.object;
 import static org.springframework.http.ResponseEntity.notFound;
 
 import com.github.lette1394.storage.domain.AllSpaces;
 import com.github.lette1394.storage.domain.Object;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -30,10 +33,16 @@ public class ObjectApi {
     ServerHttpRequest request,
     @PathVariable String spaceName) {
 
-    final var response = allSpaces
-      .belongingTo(spaceName)
-      .thenCompose(space -> space.createObject(request.getBody())
-        .thenCompose(object -> space.save(object).thenApply(__ -> object)))
+    final var response = start()
+      .thenCompose(__ -> allSpaces.belongingTo(spaceName))
+      .thenCompose(space -> {
+        final var allObjects = space.allObjects();
+        final var contents = request.getBody();
+        final var id = RandomStringUtils.randomAlphanumeric(10, 20);
+        return start()
+          .thenCompose(__ -> object(id, contents))
+          .thenCompose(peekStage(allObjects::save));
+      })
       .thenApply(Object::id)
       .thenApply(id -> ResponseEntity
         .status(HttpStatus.CREATED)
@@ -43,6 +52,7 @@ public class ObjectApi {
 
     return Mono.fromCompletionStage(response);
   }
+
 
   @GetMapping("/spaces/{spaceName}/objects/{objectId}")
   Mono<ResponseEntity<Publisher<DataBuffer>>> download(
