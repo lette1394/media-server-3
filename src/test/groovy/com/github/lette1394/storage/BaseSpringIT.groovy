@@ -6,8 +6,6 @@ import org.gradle.testkit.runner.GradleRunner
 import org.springframework.web.reactive.function.client.WebClient
 import org.testcontainers.containers.Container
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.Network
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.output.OutputFrame
 import org.testcontainers.containers.output.ToStringConsumer
 import org.testcontainers.spock.Testcontainers

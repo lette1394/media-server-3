@@ -4,22 +4,20 @@ import static com.github.lette1394.core.domain.FluentCompletionStage.start;
 import static java.util.Objects.requireNonNull;
 
 import com.github.lette1394.storage.domain.Object;
+import com.github.lette1394.storage.usecase.CannotUploadException;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import lombok.RequiredArgsConstructor;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 
+@RequiredArgsConstructor
 public class MemoryObject implements Object {
   private final String id;
   private final byte[] contents;
-
-  public MemoryObject(String id, byte[] contents) {
-    this.id = id;
-    this.contents = contents;
-  }
 
   public static CompletionStage<? extends Object> from(Object object) {
     return start()
@@ -37,7 +35,10 @@ public class MemoryObject implements Object {
         return bytes;
       })
       .map(bytes -> new MemoryObject(id, bytes))
-      .toFuture();
+      .toFuture()
+      .exceptionally(e -> {
+        throw new CannotUploadException("업로드에 문제가 있음", e);
+      });
   }
 
   @Override

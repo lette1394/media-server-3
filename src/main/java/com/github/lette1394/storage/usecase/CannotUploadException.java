@@ -8,4 +8,8 @@ public class CannotUploadException extends RuntimeException {
   public CannotUploadException(String message) {
     super(message);
   }
+
+  public CannotUploadException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

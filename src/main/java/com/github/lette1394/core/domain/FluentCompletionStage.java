@@ -1,9 +1,11 @@
 package com.github.lette1394.core.domain;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import lombok.SneakyThrows;
 
 public final class FluentCompletionStage {
   public static CompletionStage<Void> start() {
@@ -22,7 +24,16 @@ public final class FluentCompletionStage {
     return t -> voidStageFunction.apply(t).thenApply(__ -> t);
   }
 
+  @SneakyThrows
   public static <T> T await(CompletionStage<T> stage) {
-    return stage.toCompletableFuture().join();
+    try {
+      return stage.toCompletableFuture().join();
+    } catch (CompletionException e) {
+      final var cause = e.getCause();
+      if (cause == null) {
+        throw e;
+      }
+      throw cause;
+    }
   }
 }
