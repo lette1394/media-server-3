@@ -1,9 +1,9 @@
 package com.github.lette1394.storage.infra;
 
 import static com.github.lette1394.core.domain.FluentCompletionStage.start;
-import static java.util.Objects.requireNonNull;
 
 import com.github.lette1394.storage.domain.Object;
+import com.github.lette1394.storage.domain.Payload;
 import com.github.lette1394.storage.usecase.CannotUploadException;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.CompletableFuture;
@@ -13,21 +13,25 @@ import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
+import reactor.core.publisher.Flux;
 
 @RequiredArgsConstructor
-public class MemoryObject implements Object {
+public class MemoryObject implements Object<DataBuffer> {
   private final String id;
   private final byte[] contents;
 
-  public static CompletionStage<? extends Object> from(Object object) {
+  public static CompletionStage<? extends Object<DataBuffer>> from(Object<DataBuffer> object) {
     return start()
       .thenCompose(__ -> object.contents())
       .thenCompose(contents -> object(object.id(), contents));
   }
 
-  public static CompletionStage<? extends Object> object(String id, Publisher<DataBuffer> contents) {
+  public static CompletionStage<? extends Object<DataBuffer>> object(String id,
+    Publisher<? extends Payload<DataBuffer>> contents) {
+
+    final Flux<DataBuffer> map = Flux.from(contents).map(Payload::body);
     return DataBufferUtils
-      .join(requireNonNull(contents))
+      .join(map)
       .map(dataBuffer -> {
         byte[] bytes = new byte[dataBuffer.readableByteCount()];
         dataBuffer.read(bytes);
@@ -47,8 +51,11 @@ public class MemoryObject implements Object {
   }
 
   @Override
-  public CompletionStage<Publisher<DataBuffer>> contents() {
-    return CompletableFuture.completedFuture(
-      DataBufferUtils.readInputStream(() -> new ByteArrayInputStream(contents), new DefaultDataBufferFactory(), 1024));
+  public CompletionStage<? extends Publisher<Payload<DataBuffer>>> contents() {
+    return CompletableFuture.completedFuture(DataBufferUtils
+      .readInputStream(
+        () -> new ByteArrayInputStream(contents),
+        new DefaultDataBufferFactory(), 1024)
+      .map(DataBufferPayload::new));
   }
 }

@@ -8,6 +8,7 @@ import static org.springframework.http.ResponseEntity.notFound;
 
 import com.github.lette1394.storage.domain.AllSpaces;
 import com.github.lette1394.storage.domain.Object;
+import com.github.lette1394.storage.domain.Payload;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -23,9 +24,9 @@ import reactor.core.publisher.Mono;
 
 @RestController
 public class ObjectApi {
-  private final AllSpaces allSpaces;
+  private final AllSpaces<DataBuffer> allSpaces;
 
-  public ObjectApi(AllSpaces allSpaces) {
+  public ObjectApi(AllSpaces<DataBuffer> allSpaces) {
     this.allSpaces = allSpaces;
   }
 
@@ -34,13 +35,11 @@ public class ObjectApi {
     ServerHttpRequest request,
     @PathVariable String spaceName) {
 
-
-
     final var response = start()
       .thenCompose(__ -> allSpaces.belongingTo(spaceName))
       .thenCompose(space -> {
         final var allObjects = space.allObjects();
-        final var contents = request.getBody();
+        final var contents = request.getBody().map(DataBufferPayload::new);
         final var id = RandomStringUtils.randomAlphanumeric(10, 20);
         return start()
           .thenCompose(__ -> object(id, contents))
@@ -58,7 +57,7 @@ public class ObjectApi {
 
 
   @GetMapping("/spaces/{spaceName}/objects/{objectId}")
-  Mono<ResponseEntity<Publisher<DataBuffer>>> download(
+  Mono<ResponseEntity<? extends Publisher<Payload<DataBuffer>>>> download(
     ServerHttpRequest request,
     @PathVariable String spaceName,
     @PathVariable String objectId) {
