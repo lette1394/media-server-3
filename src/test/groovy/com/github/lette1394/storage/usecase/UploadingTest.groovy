@@ -1,18 +1,18 @@
 package com.github.lette1394.storage.usecase
 
-
+import com.github.lette1394.storage.domain.BinaryPublisher
 import com.github.lette1394.storage.infra.BrokenPublisher
-import com.github.lette1394.storage.infra.DataBufferPayload
-import org.springframework.core.io.buffer.DataBufferUtils
+import reactor.netty.ByteBufFlux
 
-import java.nio.charset.StandardCharsets
+import java.nio.file.Paths
 
 import static com.github.lette1394.core.domain.FluentCompletionStage.await
 
 abstract class UploadingTest extends LeakAwareTest {
   def 'non-null'() {
-    def contents = "hello".getBytes(StandardCharsets.UTF_8)
-    def stream = DataBufferUtils.readInputStream(() -> new ByteArrayInputStream(contents), dataBufferFactory(), 1024).map(DataBufferPayload::new)
+    def stream = ByteBufFlux
+      .fromPath(Paths.get(getClass().getResource("/image/1.png").toURI()))
+      .as(BinaryPublisher::adapt)
     def object = await(subject().upload(anySpace(), stream))
 
     expect:
@@ -21,7 +21,7 @@ abstract class UploadingTest extends LeakAwareTest {
 
   def 'broken contents'() {
     given:
-      def stream = new BrokenPublisher(dataBufferFactory())
+      def stream = new BrokenPublisher(byteBufAllocator())
     when:
       await(subject().upload(anySpace(), stream))
     then:

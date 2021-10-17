@@ -7,11 +7,13 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.ResponseEntity.notFound;
 
 import com.github.lette1394.storage.domain.AllSpaces;
+import com.github.lette1394.storage.domain.BinaryPublisher;
 import com.github.lette1394.storage.domain.Object;
 import com.github.lette1394.storage.domain.Payload;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.NettyDataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +26,9 @@ import reactor.core.publisher.Mono;
 
 @RestController
 public class ObjectApi {
-  private final AllSpaces<DataBuffer> allSpaces;
+  private final AllSpaces allSpaces;
 
-  public ObjectApi(AllSpaces<DataBuffer> allSpaces) {
+  public ObjectApi(AllSpaces allSpaces) {
     this.allSpaces = allSpaces;
   }
 
@@ -39,7 +41,11 @@ public class ObjectApi {
       .thenCompose(__ -> allSpaces.belongingTo(spaceName))
       .thenCompose(space -> {
         final var allObjects = space.allObjects();
-        final var contents = request.getBody().map(DataBufferPayload::new);
+        final var contents = request
+          .getBody()
+          .map(dataBuffer -> (NettyDataBuffer)dataBuffer)
+          .map(NettyDataBuffer::getNativeBuffer)
+          .as(BinaryPublisher::adapt);
         final var id = RandomStringUtils.randomAlphanumeric(10, 20);
         return start()
           .thenCompose(__ -> object(id, contents))
@@ -57,7 +63,7 @@ public class ObjectApi {
 
 
   @GetMapping("/spaces/{spaceName}/objects/{objectId}")
-  Mono<ResponseEntity<? extends Publisher<Payload<DataBuffer>>>> download(
+  Mono<ResponseEntity<? extends BinaryPublisher>> download(
     ServerHttpRequest request,
     @PathVariable String spaceName,
     @PathVariable String objectId) {

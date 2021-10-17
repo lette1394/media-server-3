@@ -1,11 +1,8 @@
 package com.github.lette1394.storage.usecase
 
-
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.PooledByteBufAllocator
-import org.springframework.core.io.buffer.DataBufferFactory
-import org.springframework.core.io.buffer.NettyDataBufferFactory
 import spock.lang.Specification
 
 abstract class LeakAwareTest extends Specification {
@@ -13,10 +10,6 @@ abstract class LeakAwareTest extends Specification {
 
   protected ByteBufAllocator byteBufAllocator() {
     this.byteBufAllocator
-  }
-
-  protected DataBufferFactory dataBufferFactory() {
-    new NettyDataBufferFactory(byteBufAllocator())
   }
 
   void setup() {

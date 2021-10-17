@@ -6,29 +6,20 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
 
-public class Space<BUFFER> {
+public class Space {
   private final String name;
-  private final AllObjects<BUFFER> allObjects;
+  private final AllObjects allObjects;
 
-  public Space(String name, AllObjects<BUFFER> allObjects) {
+  public Space(String name, AllObjects allObjects) {
     this.name = name;
     this.allObjects = allObjects;
   }
 
-  public AllObjects<BUFFER> allObjects() {
+  public AllObjects allObjects() {
     return allObjects;
   }
 
-  public CompletionStage<? extends Object<DataBuffer>> createObject(
-    Publisher<Payload<DataBuffer>> stream) {
-    return MemoryObject.object(RandomStringUtils.randomAlphanumeric(10, 20), stream);
-  }
-
-  public CompletionStage<Void> save(Object<BUFFER> object) {
-    return allObjects.save(object);
-  }
-
-  public CompletionStage<Object<BUFFER>> objectBelongingTo(String id) {
+  public CompletionStage<Object> objectBelongingTo(String id) {
     return allObjects.belongingTo(id);
   }
 

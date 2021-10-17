@@ -1,46 +1,39 @@
 package com.github.lette1394.storage.infra;
 
-import static com.github.lette1394.core.domain.FluentCompletionStage.start;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
+import com.github.lette1394.storage.domain.BinaryPublisher;
 import com.github.lette1394.storage.domain.Object;
-import com.github.lette1394.storage.domain.Payload;
 import com.github.lette1394.storage.usecase.CannotUploadException;
-import java.io.ByteArrayInputStream;
-import java.util.concurrent.CompletableFuture;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import java.util.concurrent.CompletionStage;
 import lombok.RequiredArgsConstructor;
-import org.reactivestreams.Publisher;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import reactor.core.publisher.Flux;
+import reactor.netty.ByteBufFlux;
 
 @RequiredArgsConstructor
-public class MemoryObject implements Object<DataBuffer> {
+public class MemoryObject implements Object {
   private final String id;
   private final byte[] contents;
 
-  public static CompletionStage<? extends Object<DataBuffer>> from(Object<DataBuffer> object) {
-    return start()
-      .thenCompose(__ -> object.contents())
-      .thenCompose(contents -> object(object.id(), contents));
-  }
+  public static CompletionStage<? extends Object> object(String id, BinaryPublisher contents) {
 
-  public static CompletionStage<? extends Object<DataBuffer>> object(String id,
-    Publisher<? extends Payload<DataBuffer>> contents) {
-
-    final Flux<DataBuffer> map = Flux.from(contents).map(Payload::body);
-    return DataBufferUtils
-      .join(map)
-      .map(dataBuffer -> {
-        byte[] bytes = new byte[dataBuffer.readableByteCount()];
-        dataBuffer.read(bytes);
-        DataBufferUtils.release(dataBuffer);
+    // FIXME (jaeeun) 2021/10/18: allocator 밖에서 받기
+    final var byteBufs = new CompositeByteBuf(ByteBufAllocator.DEFAULT, false, Integer.MAX_VALUE);
+    return Flux
+      .from(contents)
+      .reduce(byteBufs, CompositeByteBuf::addComponent)
+      .map(buf -> {
+        byte[] bytes = new byte[buf.readableBytes()];
+        buf.readBytes(bytes);
+        buf.release();
         return bytes;
       })
       .map(bytes -> new MemoryObject(id, bytes))
       .toFuture()
       .exceptionally(e -> {
+        byteBufs.release();
         throw new CannotUploadException("업로드에 문제가 있음", e);
       });
   }
@@ -51,11 +44,19 @@ public class MemoryObject implements Object<DataBuffer> {
   }
 
   @Override
-  public CompletionStage<? extends Publisher<Payload<DataBuffer>>> contents() {
-    return CompletableFuture.completedFuture(DataBufferUtils
-      .readInputStream(
-        () -> new ByteArrayInputStream(contents),
-        new DefaultDataBufferFactory(), 1024)
-      .map(DataBufferPayload::new));
+  public CompletionStage<BinaryPublisher> contents() {
+    return completedFuture(ByteBufFlux
+      .fromInbound(Flux.fromArray(wrap(contents)))
+      .as(BinaryPublisher::adapt));
+  }
+
+  private static Byte[] wrap(byte[] binary) {
+    final int length = binary.length;
+    final Byte[] result = new Byte[length];
+
+    for (int i = 0; i < binary.length; i++) {
+      result[i] = binary[i];
+    }
+    return result;
   }
 }
